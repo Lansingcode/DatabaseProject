@@ -3,281 +3,549 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>学生管理系统</title>
+<title>数据库管理系统</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
-  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #333; display: flex; min-height: 100vh; }
 
-  h1 { text-align: center; margin-bottom: 24px; font-size: 1.8rem; color: #1a1a2e; }
+  /* 侧边栏 */
+  .sidebar { width: 220px; background: #1a1a2e; color: #ccc; display: flex; flex-direction: column; padding: 16px 0; flex-shrink: 0; }
+  .sidebar h2 { padding: 0 16px 12px; font-size: 1rem; color: #fff; border-bottom: 1px solid #333; margin-bottom: 8px; }
+  .table-list { flex: 1; overflow-y: auto; }
+  .table-item { display: flex; align-items: center; padding: 10px 16px; cursor: pointer; font-size: 0.9rem; transition: all 0.15s; gap: 6px; border-left: 3px solid transparent; }
+  .table-item:hover { background: #16213e; color: #fff; }
+  .table-item.active { background: #0f3460; color: #fff; border-left-color: #4096ff; }
+  .table-item .icon { font-size: 0.85rem; opacity: 0.6; }
+  .sidebar .btn-new { margin: 12px 16px; padding: 8px 0; background: #4096ff; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; text-align: center; transition: background 0.2s; }
+  .sidebar .btn-new:hover { background: #1677ff; }
 
-  /* 表单卡片 */
-  .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .card h2 { margin-bottom: 16px; font-size: 1.1rem; color: #555; }
-
-  .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
-  .form-group { display: flex; flex-direction: column; gap: 4px; }
-  .form-group label { font-size: 0.85rem; color: #666; }
-  .form-group input { padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 0.95rem; outline: none; transition: border 0.2s; }
-  .form-group input:focus { border-color: #4096ff; box-shadow: 0 0 0 2px rgba(64,150,255,0.15); }
-  .form-group.name-field { flex: 2; min-width: 140px; }
-  .form-group.age-field { flex: 1; min-width: 80px; }
-  .form-group.grade-field { flex: 2; min-width: 140px; }
+  /* 主区域 */
+  .main { flex: 1; display: flex; flex-direction: column; padding: 20px 24px; overflow: auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .topbar h1 { font-size: 1.4rem; color: #1a1a2e; }
+  .topbar .actions { display: flex; gap: 8px; }
+  .backend-select { font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; border: 1px solid #d9d9d9; background: #fff; }
 
   /* 按钮 */
-  .btn { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+  .btn { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
   .btn-primary { background: #4096ff; color: #fff; }
   .btn-primary:hover { background: #1677ff; }
+  .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+  .btn-danger:hover { background: #ff4d4f; color: #fff; }
+  .btn-sm { padding: 3px 10px; font-size: 0.8rem; }
   .btn-cancel { background: #fff; color: #666; border: 1px solid #d9d9d9; }
   .btn-cancel:hover { border-color: #4096ff; color: #4096ff; }
-  .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; padding: 4px 12px; font-size: 0.85rem; }
-  .btn-danger:hover { background: #ff4d4f; color: #fff; }
-  .btn-edit { background: #fff; color: #4096ff; border: 1px solid #4096ff; padding: 4px 12px; font-size: 0.85rem; margin-right: 6px; }
-  .btn-edit:hover { background: #4096ff; color: #fff; }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* 表格 */
-  table { width: 100%; border-collapse: collapse; }
-  thead { background: #fafafa; }
-  th { text-align: left; padding: 12px 16px; font-weight: 600; font-size: 0.85rem; color: #888; border-bottom: 1px solid #f0f0f0; }
-  td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
-  tr:hover td { background: #fafafa; }
-  .empty-row td { text-align: center; padding: 40px; color: #999; }
+  /* 卡片 */
+  .card { background: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow-x: auto; }
 
-  /* 提示消息 */
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 4px; font-size: 0.9rem; color: #fff; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  thead { background: #fafafa; }
+  th { text-align: left; padding: 10px 14px; font-weight: 600; font-size: 0.82rem; color: #888; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f5f5f5; }
+  tr:hover td { background: #fafbfc; }
+  .empty-row td { text-align: center; padding: 48px; color: #bbb; }
+
+  /* Toast */
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 4px; font-size: 0.88rem; color: #fff; z-index: 2000; opacity: 0; transition: opacity 0.3s; }
   .toast.show { opacity: 1; }
   .toast-success { background: #52c41a; }
   .toast-error { background: #ff4d4f; }
 
-  /* 加载状态 */
-  .loading td { text-align: center; padding: 40px; color: #999; }
+  /* 模态框 */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #fff; border-radius: 8px; padding: 24px; min-width: 480px; max-width: 640px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+  .modal h3 { margin-bottom: 16px; font-size: 1.1rem; }
+  .modal .form-group { margin-bottom: 12px; }
+  .modal .form-group label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: #666; }
+  .modal .form-group input, .modal .form-group select { width: 100%; padding: 7px 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 0.9rem; outline: none; }
+  .modal .form-group input:focus, .modal .form-group select:focus { border-color: #4096ff; box-shadow: 0 0 0 2px rgba(64,150,255,0.15); }
+  .modal .checkbox-row { display: flex; gap: 16px; margin-bottom: 12px; align-items: center; }
+  .modal .checkbox-row label { display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+  .modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
 
-  /* 确认对话框 */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 999; justify-content: center; align-items: center; }
-  .overlay.active { display: flex; }
-  .dialog { background: #fff; border-radius: 8px; padding: 24px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-  .dialog p { margin-bottom: 20px; font-size: 1rem; }
-  .dialog .btn { margin: 0 6px; }
+  .column-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .column-row input { flex: 1; min-width: 60px; }
+  .column-row select { width: 130px; flex-shrink: 0; }
+  .column-row .checkbox-row { margin-bottom: 0; gap: 6px; flex-shrink: 0; }
+  .column-row .btn-sm { flex-shrink: 0; }
 
-  /* 小屏幕适配 */
-  @media (max-width: 600px) {
-    .form-row { flex-direction: column; }
-    .btn { width: 100%; justify-content: center; }
-    th:nth-child(2), td:nth-child(2) { display: none; }
+  /* 无选中状态 */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #bbb; }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; flex-direction: row; align-items: center; padding: 8px 12px; overflow-x: auto; }
+    .sidebar h2 { display: none; }
+    .table-list { display: flex; gap: 4px; flex: 0; }
+    .table-item { padding: 6px 12px; border-radius: 4px; border-left: none; }
+    .modal { min-width: 90vw; }
+    .column-row { flex-wrap: wrap; }
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>学生管理系统</h1>
 
-  <!-- Toast 消息 -->
-  <div class="toast" id="toast"></div>
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
-  <!-- 确认对话框 -->
-  <div class="overlay" id="confirmOverlay">
-    <div class="dialog">
-      <p>确定要删除该学生吗？此操作不可恢复。</p>
-      <button class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
-      <button class="btn btn-cancel" id="cancelDeleteBtn">取消</button>
+<!-- 侧边栏 -->
+<div class="sidebar">
+  <h2>数据表</h2>
+  <div class="table-list" id="tableList"></div>
+  <button class="btn-new" onclick="openCreateTable()">+ 新建表</button>
+</div>
+
+<!-- 主区域 -->
+<div class="main">
+  <div class="topbar">
+    <h1 id="mainTitle">数据库管理系统</h1>
+    <div class="actions">
+      <select class="backend-select" id="backendSelect" onchange="switchBackend(this.value)">
+        <option value="">Java (8080)</option>
+        <option value="http://localhost:3000">Node.js (3000)</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAddRow()" id="btnAddRow" disabled>+ 添加行</button>
+      <button class="btn" onclick="openEditTable()" id="btnEditTable" disabled style="background:#fff;border:1px solid #d9d9d9;">修改表</button>
+      <button class="btn btn-danger" onclick="confirmDeleteTable()" id="btnDelTable" disabled>删除表</button>
     </div>
   </div>
-
-  <!-- 表单 -->
-  <div class="card">
-    <h2 id="formTitle">添加学生</h2>
-    <div class="form-row">
-      <div class="form-group name-field">
-        <label for="name">姓名 *</label>
-        <input type="text" id="name" placeholder="请输入姓名" maxlength="50" autocomplete="off">
-      </div>
-      <div class="form-group age-field">
-        <label for="age">年龄</label>
-        <input type="number" id="age" placeholder="年龄" min="1" max="150">
-      </div>
-      <div class="form-group grade-field">
-        <label for="grade">年级</label>
-        <input type="text" id="grade" placeholder="请输入年级" maxlength="20" autocomplete="off">
-      </div>
-      <div class="form-group" style="justify-content: flex-end;">
-        <label>&nbsp;</label>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-primary" id="submitBtn">添加</button>
-          <button class="btn btn-cancel" id="cancelBtn" style="display:none;">取消</button>
-        </div>
-      </div>
+  <div class="card" id="dataArea">
+    <div class="empty-state">
+      <div class="icon">📊</div>
+      <div>请从左侧选择一个数据表</div>
     </div>
   </div>
+</div>
 
-  <!-- 数据表格 -->
-  <div class="card" style="padding: 0; overflow-x: auto;">
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 60px;">ID</th>
-          <th>姓名</th>
-          <th style="width: 70px;">年龄</th>
-          <th>年级</th>
-          <th style="width: 120px;">操作</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td class="loading" colspan="5">加载中...</td></tr>
-      </tbody>
-    </table>
+<!-- 模态框: 创建表 -->
+<div class="modal-overlay" id="createTableModal">
+  <div class="modal">
+    <h3>创建新表</h3>
+    <div class="form-group"><label>表名</label><input id="newTableName" placeholder="如 course" maxlength="64" autocomplete="off"></div>
+    <div style="margin-bottom:8px;font-size:0.85rem;color:#666;">列定义</div>
+    <div id="createColumns"></div>
+    <button class="btn btn-sm" onclick="addColumnDef()" style="background:#f0f0f0;">+ 添加列</button>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal('createTableModal')">取消</button>
+      <button class="btn btn-primary" onclick="doCreateTable()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框: 修改表 -->
+<div class="modal-overlay" id="editTableModal">
+  <div class="modal">
+    <h3 id="editTableTitle">修改表</h3>
+    <div style="margin-bottom:8px;font-size:0.85rem;color:#666;">新增列</div>
+    <div id="addColumnsList"></div>
+    <button class="btn btn-sm" onclick="addAlterColumn()" style="background:#f0f0f0;margin-bottom:12px;">+ 添加列</button>
+    <div style="margin-bottom:8px;font-size:0.85rem;color:#666;">删除列</div>
+    <div id="dropColumnsList"></div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal('editTableModal')">取消</button>
+      <button class="btn btn-primary" onclick="doAlterTable()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框: 行表单 -->
+<div class="modal-overlay" id="rowFormModal">
+  <div class="modal">
+    <h3 id="rowFormTitle">添加行</h3>
+    <div id="rowFormFields"></div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal('rowFormModal')">取消</button>
+      <button class="btn btn-primary" id="rowFormSubmit" onclick="doSaveRow()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框: 删除确认 -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="min-width:360px;text-align:center;">
+    <p id="confirmMsg" style="margin-bottom:20px;"></p>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn btn-cancel" onclick="closeModal('confirmModal')">取消</button>
+      <button class="btn btn-danger" id="confirmOkBtn">确认</button>
+    </div>
   </div>
 </div>
 
 <script>
-  const API = '/api/students';
-  let editingId = null;          // 当前正在编辑的 id，null 表示新增模式
-  let deleteTargetId = null;     // 待删除的 id
+  // ===================== 状态 =====================
+  var API = '';                 // API 前缀，默认同源（Java 8080）
+  var currentTable = null;      // 当前选中的表名
+  var currentColumns = [];      // 当前表的列信息
+  var currentRows = [];         // 当前表的数据
+  var editingRowId = null;      // 正在编辑的行主键值（null=新增模式）
+  var _confirmCallback = null;  // 删除确认回调
 
-  // DOM 引用
-  const nameInput = document.getElementById('name');
-  const ageInput = document.getElementById('age');
-  const gradeInput = document.getElementById('grade');
-  const submitBtn = document.getElementById('submitBtn');
-  const cancelBtn = document.getElementById('cancelBtn');
-  const formTitle = document.getElementById('formTitle');
-  const tableBody = document.getElementById('tableBody');
-  const toast = document.getElementById('toast');
-  const overlay = document.getElementById('confirmOverlay');
+  // ===================== DOM =====================
+  var tableList = document.getElementById('tableList');
+  var dataArea = document.getElementById('dataArea');
+  var mainTitle = document.getElementById('mainTitle');
+  var btnAddRow = document.getElementById('btnAddRow');
+  var btnEditTable = document.getElementById('btnEditTable');
+  var btnDelTable = document.getElementById('btnDelTable');
+  var toast = document.getElementById('toast');
 
-  // ====== Toast ======
-  let toastTimer;
+  // ===================== Toast =====================
+  var toastTimer;
   function showToast(msg, type) {
     toast.textContent = msg;
-    toast.className = 'toast toast-' + type + ' show';
+    toast.className = 'toast toast-' + (type || 'success') + ' show';
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2500);
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2500);
   }
 
-  // ====== CRUD 操作 ======
-  async function loadStudents() {
-    tableBody.innerHTML = '<tr><td class="loading" colspan="5">加载中...</td></tr>';
+  // ===================== Modal =====================
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  // ===================== 后端切换 =====================
+  function switchBackend(val) { API = val; loadTableList(); currentTable = null; showEmptyState(); }
+
+  // ===================== 表列表 =====================
+  async function loadTableList() {
     try {
-      var res = await fetch(API);
+      var res = await fetch(API + '/api/tables');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var tables = await res.json();
+      tableList.innerHTML = tables.map(function(t) {
+        var cls = (t === currentTable) ? ' table-item active' : 'table-item';
+        return '<div class="' + cls + '" onclick="selectTable(\'' + t + '\')"><span class="icon">&#9632;</span>' + t + '</div>';
+      }).join('');
+    } catch(err) {
+      tableList.innerHTML = '<div style="padding:16px;color:#ff4d4f;">加载失败</div>';
+    }
+  }
+
+  /** 选择表 */
+  async function selectTable(name) {
+    currentTable = name;
+    editingRowId = null;
+    btnAddRow.disabled = false;
+    btnEditTable.disabled = false;
+    btnDelTable.disabled = false;
+    mainTitle.textContent = name;
+    loadTableList();
+    await loadTableStructure();
+    await loadRows();
+  }
+
+  /** 加载表结构 */
+  async function loadTableStructure() {
+    try {
+      var res = await fetch(API + '/api/tables/' + currentTable);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       var data = await res.json();
-      if (data.length === 0) {
-        tableBody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据，请添加学生</td></tr>';
-        return;
-      }
-      tableBody.innerHTML = data.map(function(s) {
-        return '<tr>' +
-          '<td>' + s.id + '</td>' +
-          '<td>' + escapeHtml(s.name) + '</td>' +
-          '<td>' + (s.age != null ? s.age : '-') + '</td>' +
-          '<td>' + escapeHtml(s.grade || '-') + '</td>' +
-          '<td>' +
-            '<button class="btn btn-edit" onclick="startEdit(' + s.id + ')">编辑</button>' +
-            '<button class="btn btn-danger" onclick="confirmDelete(' + s.id + ', \'' + escapeHtml(s.name) + '\')">删除</button>' +
-          '</td>' +
-        '</tr>';
-      }).join('');
-    } catch (err) {
-      tableBody.innerHTML = '<tr><td class="empty-row" colspan="5">加载失败：' + err.message + '</td></tr>';
+      currentColumns = data.columns || [];
+    } catch(err) {
+      showToast('加载表结构失败: ' + err.message, 'error');
     }
   }
 
-  /** 新增或更新 */
-  submitBtn.addEventListener('click', async function() {
-    var name = nameInput.value.trim();
-    if (!name) { showToast('请填写姓名', 'error'); return; }
-    var body = { name: name, age: ageInput.value ? parseInt(ageInput.value) : null, grade: gradeInput.value.trim() || null };
-    submitBtn.disabled = true;
-
+  /** 加载表数据 */
+  async function loadRows() {
     try {
-      var res, method, successMsg;
-      if (editingId) {
-        method = 'PUT';
-        successMsg = '更新成功';
-        res = await fetch(API + '/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var res = await fetch(API + '/api/tables/' + currentTable + '/rows');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      currentRows = await res.json();
+      renderTable();
+    } catch(err) {
+      dataArea.innerHTML = '<div class="empty-state"><div>加载失败: ' + err.message + '</div></div>';
+    }
+  }
+
+  /** 渲染数据表格 */
+  function renderTable() {
+    if (!currentRows.length) {
+      dataArea.innerHTML = '<div class="empty-state"><div>暂无数据，点击「添加行」新增记录</div></div>';
+      return;
+    }
+    var cols = currentColumns;
+    var html = '<table><thead><tr>';
+    for (var i = 0; i < cols.length; i++) {
+      html += '<th>' + cols[i].name + '<br><small style="font-weight:400;color:#aaa;">' + cols[i].type + '</small></th>';
+    }
+    html += '<th style="width:100px;">操作</th></tr></thead><tbody>';
+
+    for (var r = 0; r < currentRows.length; r++) {
+      html += '<tr>';
+      for (var c = 0; c < cols.length; c++) {
+        var val = currentRows[r][cols[c].name];
+        html += '<td>' + (val != null ? val : '<span style="color:#ccc;">NULL</span>') + '</td>';
+      }
+      html += '<td style="white-space:nowrap;">';
+      html += '<button class="btn btn-primary btn-sm" onclick="openEditRow(' + r + ')">编辑</button> ';
+      html += '<button class="btn btn-danger btn-sm" onclick="confirmDeleteRow(' + r + ')">删除</button>';
+      html += '</td></tr>';
+    }
+    html += '</tbody></table>';
+    dataArea.innerHTML = html;
+  }
+
+  function showEmptyState() {
+    currentTable = null; currentColumns = []; currentRows = [];
+    btnAddRow.disabled = true; btnEditTable.disabled = true; btnDelTable.disabled = true;
+    mainTitle.textContent = '数据库管理系统';
+    dataArea.innerHTML = '<div class="empty-state"><div class="icon">📊</div><div>请从左侧选择一个数据表</div></div>';
+    loadTableList();
+  }
+
+  // ===================== 创建表 =====================
+  function openCreateTable() {
+    document.getElementById('newTableName').value = '';
+    document.getElementById('createColumns').innerHTML = '';
+    addColumnDef();
+    openModal('createTableModal');
+  }
+
+  function addColumnDef() {
+    var div = document.createElement('div');
+    div.className = 'column-row';
+    div.innerHTML = '<input placeholder="列名" maxlength="64">&nbsp;' +
+      '<select>' +
+        '<option>INT</option><option>VARCHAR(100)</option><option>TEXT</option>' +
+        '<option>BIGINT</option><option>DOUBLE</option><option>DATE</option>' +
+        '<option>DATETIME</option><option>BOOLEAN</option>' +
+      '</select>&nbsp;' +
+      '<label><input type="checkbox" class="col-nn">NOT NULL</label>&nbsp;' +
+      '<label><input type="checkbox" class="col-pk">PK</label>&nbsp;' +
+      '<label><input type="checkbox" class="col-ai">自增</label>&nbsp;' +
+      '<button class="btn btn-sm btn-cancel" onclick="this.parentElement.remove()">✕</button>';
+    document.getElementById('createColumns').appendChild(div);
+  }
+
+  async function doCreateTable() {
+    var name = document.getElementById('newTableName').value.trim();
+    if (!name) { showToast('请输入表名', 'error'); return; }
+    var rows = document.getElementById('createColumns').children;
+    var columns = [];
+    for (var i = 0; i < rows.length; i++) {
+      var inputs = rows[i].querySelectorAll('input');
+      var colName = inputs[0].value.trim();
+      if (!colName) continue;
+      columns.push({
+        name: colName,
+        type: rows[i].querySelector('select').value,
+        notNull: inputs[1].checked,
+        primaryKey: inputs[2].checked,
+        autoIncrement: inputs[3].checked
+      });
+    }
+    if (!columns.length) { showToast('至少定义一个列', 'error'); return; }
+    try {
+      var res = await fetch(API + '/api/tables', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({tableName: name, columns: columns})
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'HTTP ' + res.status);
+      showToast('表创建成功', 'success');
+      closeModal('createTableModal');
+      await loadTableList();
+      selectTable(name);
+    } catch(err) { showToast('创建失败: ' + err.message, 'error'); }
+  }
+
+  // ===================== 修改/删除表 =====================
+  async function openEditTable() {
+    if (!currentTable) return;
+    document.getElementById('editTableTitle').textContent = '修改表: ' + currentTable;
+    document.getElementById('addColumnsList').innerHTML = '';
+    document.getElementById('dropColumnsList').innerHTML = '';
+    // 已有列可选中删除
+    for (var i = 0; i < currentColumns.length; i++) {
+      var c = currentColumns[i];
+      var label = document.createElement('label');
+      label.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.9rem;';
+      label.innerHTML = '<input type="checkbox" class="drop-col" value="' + c.name + '" ' + (c.primaryKey ? 'disabled title="主键不可删除"' : '') + '>' +
+        c.name + ' <span style="color:#aaa;">(' + c.type + ')</span>';
+      document.getElementById('dropColumnsList').appendChild(label);
+    }
+    openModal('editTableModal');
+  }
+
+  function addAlterColumn() {
+    var div = document.createElement('div');
+    div.className = 'column-row';
+    div.innerHTML = '<input placeholder="列名" maxlength="64">&nbsp;' +
+      '<select><option>INT</option><option>VARCHAR(100)</option><option>TEXT</option><option>BIGINT</option><option>DOUBLE</option><option>DATE</option><option>DATETIME</option><option>BOOLEAN</option></select>&nbsp;' +
+      '<label><input type="checkbox" class="col-nn">NOT NULL</label>&nbsp;' +
+      '<button class="btn btn-sm btn-cancel" onclick="this.parentElement.remove()">✕</button>';
+    document.getElementById('addColumnsList').appendChild(div);
+  }
+
+  async function doAlterTable() {
+    var addCols = [];
+    var rows = document.getElementById('addColumnsList').children;
+    for (var i = 0; i < rows.length; i++) {
+      var inputs = rows[i].querySelectorAll('input');
+      var colName = inputs[0].value.trim();
+      if (!colName) continue;
+      addCols.push({
+        name: colName,
+        type: rows[i].querySelector('select').value,
+        notNull: inputs[1].checked
+      });
+    }
+    var dropCols = [];
+    var checks = document.querySelectorAll('#dropColumnsList .drop-col:checked:not([disabled])');
+    checks.forEach(function(cb) { dropCols.push(cb.value); });
+
+    if (!addCols.length && !dropCols.length) { showToast('没有变化', 'error'); return; }
+    try {
+      var res = await fetch(API + '/api/tables/' + currentTable, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({addColumns: addCols, dropColumns: dropCols})
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'HTTP ' + res.status);
+      showToast('表结构已更新', 'success');
+      closeModal('editTableModal');
+      await loadTableStructure();
+      await loadRows();
+    } catch(err) { showToast('修改失败: ' + err.message, 'error'); }
+  }
+
+  function confirmDeleteTable() {
+    if (!currentTable) return;
+    document.getElementById('confirmMsg').textContent = '确定要删除表「' + currentTable + '」吗？此操作将删除表中所有数据且不可恢复。';
+    document.getElementById('confirmOkBtn').className = 'btn btn-danger';
+    document.getElementById('confirmOkBtn').textContent = '确认删除';
+    _confirmCallback = async function() {
+      var tableToDelete = currentTable;
+      try {
+        var res = await fetch(API + '/api/tables/' + tableToDelete, { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        showToast('表已删除', 'success');
+        showEmptyState();
+        await loadTableList();
+      } catch(err) { showToast('删除失败: ' + err.message, 'error'); }
+    };
+    openModal('confirmModal');
+  }
+
+  // ===================== 行 CRUD =====================
+  function buildRowForm(rowData, isEdit) {
+    var fieldsDiv = document.getElementById('rowFormFields');
+    fieldsDiv.innerHTML = '';
+    for (var i = 0; i < currentColumns.length; i++) {
+      var c = currentColumns[i];
+      var val = rowData ? rowData[c.name] : '';
+      if (val == null) val = '';
+      var disabled = false;
+      if (c.autoIncrement && !isEdit) disabled = true;  // 自增列新增时不填
+      if (c.primaryKey && isEdit) disabled = true;       // 主键编辑时不改
+
+      var html = '<div class="form-group"><label>' + c.name + ' (' + c.type + ')</label>';
+      if (c.type.toUpperCase().indexOf('TEXT') >= 0) {
+        html += '<textarea ' + (disabled ? 'disabled' : '') + ' style="width:100%;min-height:60px;padding:7px 10px;border:1px solid #d9d9d9;border-radius:4px;font-size:0.9rem;" data-col="' + c.name + '">' + val + '</textarea>';
       } else {
-        method = 'POST';
-        successMsg = '新增成功';
-        res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        html += '<input type="' + (c.type.toUpperCase().indexOf('INT') >= 0 || c.type.toUpperCase().indexOf('DOUBLE') >= 0 ? 'number' : 'text') +
+                '" ' + (disabled ? 'disabled' : '') + ' value="' + val + '" data-col="' + c.name + '" autocomplete="off">';
       }
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      showToast(successMsg, 'success');
-      resetForm();
-      loadStudents();
-    } catch (err) {
-      showToast('操作失败：' + err.message, 'error');
-    } finally {
-      submitBtn.disabled = false;
+      html += '</div>';
+      fieldsDiv.innerHTML += html;
     }
-  });
+  }
 
-  /** 进入编辑模式 */
-  async function startEdit(id) {
+  function openAddRow() {
+    if (!currentTable) return;
+    editingRowId = null;
+    document.getElementById('rowFormTitle').textContent = '添加行: ' + currentTable;
+    document.getElementById('rowFormSubmit').textContent = '创建';
+    buildRowForm(null, false);
+    openModal('rowFormModal');
+  }
+
+  function openEditRow(rowIndex) {
+    editingRowId = rowIndex;
+    document.getElementById('rowFormTitle').textContent = '编辑行: ' + currentTable;
+    document.getElementById('rowFormSubmit').textContent = '保存';
+    buildRowForm(currentRows[rowIndex], true);
+    openModal('rowFormModal');
+  }
+
+  async function doSaveRow() {
+    var fields = document.querySelectorAll('#rowFormFields [data-col]');
+    var row = {};
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      if (f.disabled) continue;
+      var val = f.value;
+      if (val === '') { row[f.getAttribute('data-col')] = null; continue; }
+      // 基本类型推断
+      var col = currentColumns.find(function(c) { return c.name === f.getAttribute('data-col'); });
+      if (col) {
+        var t = col.type.toUpperCase();
+        if (t.indexOf('INT') >= 0 || t.indexOf('BIGINT') >= 0) { row[col.name] = parseInt(val); continue; }
+        if (t.indexOf('DOUBLE') >= 0) { row[col.name] = parseFloat(val); continue; }
+      }
+      row[f.getAttribute('data-col')] = val;
+    }
     try {
-      var res = await fetch(API + '/' + id);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      var s = await res.json();
-      editingId = s.id;
-      nameInput.value = s.name;
-      ageInput.value = s.age != null ? s.age : '';
-      gradeInput.value = s.grade || '';
-      formTitle.textContent = '编辑学生 — ID: ' + s.id;
-      submitBtn.textContent = '保存';
-      cancelBtn.style.display = '';
-      nameInput.focus();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      showToast('获取学生信息失败', 'error');
-    }
+      var url, method;
+      if (editingRowId !== null) {
+        url = API + '/api/tables/' + currentTable + '/rows/' + getPkValue(editingRowId);
+        method = 'PUT';
+      } else {
+        url = API + '/api/tables/' + currentTable + '/rows';
+        method = 'POST';
+      }
+      var res = await fetch(url, {
+        method: method, headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(row)
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'HTTP ' + res.status);
+      showToast(editingRowId !== null ? '更新成功' : '新增成功', 'success');
+      closeModal('rowFormModal');
+      await loadRows();
+    } catch(err) { showToast('操作失败: ' + err.message, 'error'); }
   }
 
-  /** 取消编辑 */
-  cancelBtn.addEventListener('click', resetForm);
-
-  function resetForm() {
-    editingId = null;
-    nameInput.value = '';
-    ageInput.value = '';
-    gradeInput.value = '';
-    formTitle.textContent = '添加学生';
-    submitBtn.textContent = '添加';
-    cancelBtn.style.display = 'none';
+  function confirmDeleteRow(rowIndex) {
+    var pk = getPkValue(rowIndex);
+    document.getElementById('confirmMsg').textContent = '确定要删除 ID 为 ' + pk + ' 的记录吗？';
+    document.getElementById('confirmOkBtn').className = 'btn btn-danger';
+    document.getElementById('confirmOkBtn').textContent = '确认删除';
+    _confirmCallback = async function() {
+      try {
+        var res = await fetch(API + '/api/tables/' + currentTable + '/rows/' + pk, { method: 'DELETE' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        showToast('删除成功', 'success');
+        await loadRows();
+      } catch(err) { showToast('删除失败: ' + err.message, 'error'); }
+    };
+    openModal('confirmModal');
   }
 
-  /** 删除确认 */
-  function confirmDelete(id, name) {
-    deleteTargetId = id;
-    document.querySelector('#confirmOverlay p').textContent = '确定要删除「' + name + '」(ID: ' + id + ') 吗？此操作不可恢复。';
-    overlay.classList.add('active');
+  /** 获取某行的主键值 */
+  function getPkValue(rowIndex) {
+    var pkCol = currentColumns.find(function(c) { return c.primaryKey; });
+    return pkCol ? currentRows[rowIndex][pkCol.name] : rowIndex;
   }
 
-  document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
-    if (!deleteTargetId) return;
-    try {
-      var res = await fetch(API + '/' + deleteTargetId, { method: 'DELETE' });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      showToast('删除成功', 'success');
-    } catch (err) {
-      showToast('删除失败：' + err.message, 'error');
-    }
-    overlay.classList.remove('active');
-    deleteTargetId = null;
-    loadStudents();
+  // ===================== 删除确认通用 =====================
+  document.getElementById('confirmOkBtn').addEventListener('click', function() {
+    closeModal('confirmModal');
+    if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
   });
 
-  document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
-    overlay.classList.remove('active');
-    deleteTargetId = null;
+  // ===================== 关闭模态框点击背景 =====================
+  document.querySelectorAll('.modal-overlay').forEach(function(ov) {
+    ov.addEventListener('click', function(e) {
+      if (e.target === ov) ov.classList.remove('active');
+    });
   });
 
-  /** 防止 XSS */
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  // 初始加载
-  loadStudents();
+  // ===================== 初始加载 =====================
+  loadTableList();
 </script>
 </body>
 </html>
