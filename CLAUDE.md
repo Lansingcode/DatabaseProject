@@ -4,42 +4,51 @@
 
 ## 项目定位
 
-本项目是一个**数据库知识记录仓库**，不以后续代码开发为主要目的。用户会在对话中提问数据库相关知识，需要：
+本项目是一个**数据库知识记录仓库**，用户会在对话中提问数据库相关知识，需要：
 
 1. **精确回复**：针对用户的问题给出准确、专业的数据库知识解答
 2. **分析提问**：理解用户问题的背景和意图，识别知识薄弱点
 3. **推荐资料**：基于用户的问题，主动推荐相关的学习资料（书籍、论文、官方文档、优质博客等）
 
-## 项目技术栈（知识记录可能涉及的代码示例）
-
-这是一个基于 Maven 的 Java 8 项目，可作为数据库知识学习的实验代码环境。
-
-```bash
-# 编译
-mvn compile
-
-# 运行测试
-mvn test
-
-# 打包（生成 JAR）
-mvn package
-
-# 清理构建产物
-mvn clean
-```
-
 ## 项目结构
 
 ```
 DatabaseProject/
-├── pom.xml                          # Maven 配置，groupId: org.database
-├── src/main/java/org/database/      # 学习实验代码
-└── src/test/java/org/database/      # 测试代码
+├── pom.xml                                 # Maven + Spring Boot 2.7.18 + MySQL Connector
+├── src/main/java/org/database/
+│   ├── Application.java                    # Spring Boot 入口 (端口 8080)
+│   ├── controller/
+│   │   └── StudentController.java          # REST 控制器 (@RestController)
+│   ├── service/
+│   │   └── StudentService.java             # 业务层 (@Service)
+│   ├── dao/
+│   │   └── StudentDao.java                 # JDBC 数据访问 (PreparedStatement)
+│   ├── model/
+│   │   └── Student.java                    # 实体类
+│   └── util/
+│       └── DBUtil.java                     # 数据库连接工具
+│
+├── node-rest-api/                          # Node.js Express 模块 (端口 3000)
+│   ├── server.js                           # Express 入口
+│   ├── routes/students.js                  # 路由处理器 (CRUD)
+│   ├── db/connection.js                    # mysql2 连接池
+│   └── package.json
+│
+└── docs/                                   # 知识文档
+    ├── JDBC-CRUD知识总结.md
+    ├── HTTP访问数据库方式总结.md
+    └── RESTful-API模块说明.md
 ```
 
-- **语言版本**：Java 8（`JDK_1_8`）
-- **构建工具**：Maven
-- **IDE**：IntelliJ IDEA 项目
+## 构建与运行
+
+```bash
+# Java Spring Boot (端口 8080)
+mvn spring-boot:run
+
+# Node.js Express (端口 3000)
+cd node-rest-api && npm start
+```
 
 ## 回复风格
 
