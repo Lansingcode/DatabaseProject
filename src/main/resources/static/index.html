@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学生管理系统</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; }
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+  h1 { text-align: center; margin-bottom: 24px; font-size: 1.8rem; color: #1a1a2e; }
+
+  /* 表单卡片 */
+  .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h2 { margin-bottom: 16px; font-size: 1.1rem; color: #555; }
+
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.85rem; color: #666; }
+  .form-group input { padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 0.95rem; outline: none; transition: border 0.2s; }
+  .form-group input:focus { border-color: #4096ff; box-shadow: 0 0 0 2px rgba(64,150,255,0.15); }
+  .form-group.name-field { flex: 2; min-width: 140px; }
+  .form-group.age-field { flex: 1; min-width: 80px; }
+  .form-group.grade-field { flex: 2; min-width: 140px; }
+
+  /* 按钮 */
+  .btn { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.95rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-primary { background: #4096ff; color: #fff; }
+  .btn-primary:hover { background: #1677ff; }
+  .btn-cancel { background: #fff; color: #666; border: 1px solid #d9d9d9; }
+  .btn-cancel:hover { border-color: #4096ff; color: #4096ff; }
+  .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; padding: 4px 12px; font-size: 0.85rem; }
+  .btn-danger:hover { background: #ff4d4f; color: #fff; }
+  .btn-edit { background: #fff; color: #4096ff; border: 1px solid #4096ff; padding: 4px 12px; font-size: 0.85rem; margin-right: 6px; }
+  .btn-edit:hover { background: #4096ff; color: #fff; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: #fafafa; }
+  th { text-align: left; padding: 12px 16px; font-weight: 600; font-size: 0.85rem; color: #888; border-bottom: 1px solid #f0f0f0; }
+  td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 0.95rem; }
+  tr:hover td { background: #fafafa; }
+  .empty-row td { text-align: center; padding: 40px; color: #999; }
+
+  /* 提示消息 */
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 4px; font-size: 0.9rem; color: #fff; z-index: 1000; opacity: 0; transition: opacity 0.3s; }
+  .toast.show { opacity: 1; }
+  .toast-success { background: #52c41a; }
+  .toast-error { background: #ff4d4f; }
+
+  /* 加载状态 */
+  .loading td { text-align: center; padding: 40px; color: #999; }
+
+  /* 确认对话框 */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 999; justify-content: center; align-items: center; }
+  .overlay.active { display: flex; }
+  .dialog { background: #fff; border-radius: 8px; padding: 24px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+  .dialog p { margin-bottom: 20px; font-size: 1rem; }
+  .dialog .btn { margin: 0 6px; }
+
+  /* 小屏幕适配 */
+  @media (max-width: 600px) {
+    .form-row { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+    th:nth-child(2), td:nth-child(2) { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>学生管理系统</h1>
+
+  <!-- Toast 消息 -->
+  <div class="toast" id="toast"></div>
+
+  <!-- 确认对话框 -->
+  <div class="overlay" id="confirmOverlay">
+    <div class="dialog">
+      <p>确定要删除该学生吗？此操作不可恢复。</p>
+      <button class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+      <button class="btn btn-cancel" id="cancelDeleteBtn">取消</button>
+    </div>
+  </div>
+
+  <!-- 表单 -->
+  <div class="card">
+    <h2 id="formTitle">添加学生</h2>
+    <div class="form-row">
+      <div class="form-group name-field">
+        <label for="name">姓名 *</label>
+        <input type="text" id="name" placeholder="请输入姓名" maxlength="50" autocomplete="off">
+      </div>
+      <div class="form-group age-field">
+        <label for="age">年龄</label>
+        <input type="number" id="age" placeholder="年龄" min="1" max="150">
+      </div>
+      <div class="form-group grade-field">
+        <label for="grade">年级</label>
+        <input type="text" id="grade" placeholder="请输入年级" maxlength="20" autocomplete="off">
+      </div>
+      <div class="form-group" style="justify-content: flex-end;">
+        <label>&nbsp;</label>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" id="submitBtn">添加</button>
+          <button class="btn btn-cancel" id="cancelBtn" style="display:none;">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据表格 -->
+  <div class="card" style="padding: 0; overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>姓名</th>
+          <th style="width: 70px;">年龄</th>
+          <th>年级</th>
+          <th style="width: 120px;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td class="loading" colspan="5">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const API = '/api/students';
+  let editingId = null;          // 当前正在编辑的 id，null 表示新增模式
+  let deleteTargetId = null;     // 待删除的 id
+
+  // DOM 引用
+  const nameInput = document.getElementById('name');
+  const ageInput = document.getElementById('age');
+  const gradeInput = document.getElementById('grade');
+  const submitBtn = document.getElementById('submitBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const formTitle = document.getElementById('formTitle');
+  const tableBody = document.getElementById('tableBody');
+  const toast = document.getElementById('toast');
+  const overlay = document.getElementById('confirmOverlay');
+
+  // ====== Toast ======
+  let toastTimer;
+  function showToast(msg, type) {
+    toast.textContent = msg;
+    toast.className = 'toast toast-' + type + ' show';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2500);
+  }
+
+  // ====== CRUD 操作 ======
+  async function loadStudents() {
+    tableBody.innerHTML = '<tr><td class="loading" colspan="5">加载中...</td></tr>';
+    try {
+      var res = await fetch(API);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      if (data.length === 0) {
+        tableBody.innerHTML = '<tr class="empty-row"><td colspan="5">暂无数据，请添加学生</td></tr>';
+        return;
+      }
+      tableBody.innerHTML = data.map(function(s) {
+        return '<tr>' +
+          '<td>' + s.id + '</td>' +
+          '<td>' + escapeHtml(s.name) + '</td>' +
+          '<td>' + (s.age != null ? s.age : '-') + '</td>' +
+          '<td>' + escapeHtml(s.grade || '-') + '</td>' +
+          '<td>' +
+            '<button class="btn btn-edit" onclick="startEdit(' + s.id + ')">编辑</button>' +
+            '<button class="btn btn-danger" onclick="confirmDelete(' + s.id + ', \'' + escapeHtml(s.name) + '\')">删除</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    } catch (err) {
+      tableBody.innerHTML = '<tr><td class="empty-row" colspan="5">加载失败：' + err.message + '</td></tr>';
+    }
+  }
+
+  /** 新增或更新 */
+  submitBtn.addEventListener('click', async function() {
+    var name = nameInput.value.trim();
+    if (!name) { showToast('请填写姓名', 'error'); return; }
+    var body = { name: name, age: ageInput.value ? parseInt(ageInput.value) : null, grade: gradeInput.value.trim() || null };
+    submitBtn.disabled = true;
+
+    try {
+      var res, method, successMsg;
+      if (editingId) {
+        method = 'PUT';
+        successMsg = '更新成功';
+        res = await fetch(API + '/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      } else {
+        method = 'POST';
+        successMsg = '新增成功';
+        res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast(successMsg, 'success');
+      resetForm();
+      loadStudents();
+    } catch (err) {
+      showToast('操作失败：' + err.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  /** 进入编辑模式 */
+  async function startEdit(id) {
+    try {
+      var res = await fetch(API + '/' + id);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var s = await res.json();
+      editingId = s.id;
+      nameInput.value = s.name;
+      ageInput.value = s.age != null ? s.age : '';
+      gradeInput.value = s.grade || '';
+      formTitle.textContent = '编辑学生 — ID: ' + s.id;
+      submitBtn.textContent = '保存';
+      cancelBtn.style.display = '';
+      nameInput.focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      showToast('获取学生信息失败', 'error');
+    }
+  }
+
+  /** 取消编辑 */
+  cancelBtn.addEventListener('click', resetForm);
+
+  function resetForm() {
+    editingId = null;
+    nameInput.value = '';
+    ageInput.value = '';
+    gradeInput.value = '';
+    formTitle.textContent = '添加学生';
+    submitBtn.textContent = '添加';
+    cancelBtn.style.display = 'none';
+  }
+
+  /** 删除确认 */
+  function confirmDelete(id, name) {
+    deleteTargetId = id;
+    document.querySelector('#confirmOverlay p').textContent = '确定要删除「' + name + '」(ID: ' + id + ') 吗？此操作不可恢复。';
+    overlay.classList.add('active');
+  }
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+    if (!deleteTargetId) return;
+    try {
+      var res = await fetch(API + '/' + deleteTargetId, { method: 'DELETE' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('删除成功', 'success');
+    } catch (err) {
+      showToast('删除失败：' + err.message, 'error');
+    }
+    overlay.classList.remove('active');
+    deleteTargetId = null;
+    loadStudents();
+  });
+
+  document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+    overlay.classList.remove('active');
+    deleteTargetId = null;
+  });
+
+  /** 防止 XSS */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // 初始加载
+  loadStudents();
+</script>
+</body>
+</html>
