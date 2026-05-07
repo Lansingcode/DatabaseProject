@@ -15,32 +15,36 @@
 ```
 DatabaseProject/
 ├── pom.xml                                 # Maven + Spring Boot 2.7.18 + MySQL Connector
-├── Dockerfile.java                         # Docker 多阶段构建
+├── Dockerfile.java                         # Docker 三阶段构建 (Node 前端 + Maven + JRE)
 ├── docker-compose.yml                      # Docker 编排 (MySQL + Java)
+├── frontend/                               # Vue 3 + Element Plus 前端
+│   ├── src/
+│   │   ├── App.vue                         # 根组件
+│   │   ├── main.js                         # Vue 入口 (Element Plus + Pinia)
+│   │   ├── api/index.js                    # REST API 封装 (9 个端点)
+│   │   ├── stores/table.js                 # Pinia 状态管理
+│   │   └── components/
+│   │       ├── AppLayout.vue               # 左右布局
+│   │       ├── Sidebar.vue                 # 侧边栏表列表
+│   │       ├── DataTable.vue               # Element Plus 数据表格
+│   │       ├── EmptyState.vue              # 空状态提示
+│   │       ├── CreateTableModal.vue        # 创建表对话框
+│   │       ├── EditTableModal.vue          # 修改表对话框
+│   │       └── RowFormModal.vue            # 行表单对话框
+│   └── vite.config.js                      # 构建配置 (输出到 ../src/main/resources/static)
 ├── src/main/java/org/database/
 │   ├── Application.java                    # Spring Boot 入口 (端口 8080)
 │   ├── controller/
 │   │   ├── StudentController.java          # Student REST 控制器
 │   │   ├── SchemaController.java           # 表结构管理控制器
 │   │   └── DynamicCrudController.java      # 动态 CRUD 控制器
-│   ├── service/
-│   │   ├── StudentService.java             # Student 业务层
-│   │   ├── SchemaService.java              # 表结构管理服务
-│   │   └── DynamicCrudService.java         # 动态 CRUD 服务
-│   ├── dao/
-│   │   └── StudentDao.java                 # JDBC 数据访问 (PreparedStatement)
-│   ├── model/
-│   │   ├── Student.java                    # 学生实体
-│   │   ├── ColumnDef.java                  # 列定义
-│   │   ├── ColumnInfo.java                 # 列信息
-│   │   └── TableInfo.java                  # 表信息
+│   ├── service/                            # 业务层
+│   ├── dao/                                # JDBC 数据访问
+│   ├── model/                              # 实体类
 │   └── util/
 │       └── DBUtil.java                     # 数据库连接工具 (支持环境变量)
 │
 └── docs/                                   # 知识文档
-    ├── JDBC-CRUD知识总结.md
-    ├── HTTP访问数据库方式总结.md
-    └── RESTful-API模块说明.md
 ```
 
 ## 构建与运行
@@ -77,9 +81,14 @@ MSYS_NO_PATHCONV=1 docker exec db-mysql mysql -u root -prootroot mydb -e "SHOW T
 ### 方式二：本地开发
 
 ```bash
-# 前提：本地 MySQL 运行中，mydb 库已创建
+# 前端开发（Vite 热更新，端口 5173，自动代理 /api 到 8080）
+cd frontend && npm run dev
+
+# 后端：需要本地 MySQL 运行中，mydb 库已创建
 mvn spring-boot:run
-# 访问 http://localhost:8080
+
+# 前端构建（产物输出到 src/main/resources/static/）
+cd frontend && npm run build
 ```
 
 ### 端口与入口

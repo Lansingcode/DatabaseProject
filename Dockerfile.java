@@ -1,13 +1,21 @@
-# 第一阶段：Maven 构建
+# 第一阶段：Node.js 构建前端
+FROM node:24-alpine AS frontend-build
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# 第二阶段：Maven 构建
 FROM maven:3.9-eclipse-temurin-8 AS build
 WORKDIR /app
 COPY pom.xml .
-# 提前下载依赖（利用 Docker 层缓存）
 RUN mvn dependency:go-offline -B
 COPY src ./src
+COPY --from=frontend-build /frontend/dist/ ./src/main/resources/static/
 RUN mvn package -DskipTests -B
 
-# 第二阶段：JRE 运行
+# 第三阶段：JRE 运行
 FROM eclipse-temurin:8-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar

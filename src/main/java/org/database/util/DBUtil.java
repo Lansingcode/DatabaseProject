@@ -12,11 +12,11 @@ public final class DBUtil {
     /** 从环境变量读取数据库配置，未设置时使用默认值 */
     private static final String DB_HOST = getEnv("DB_HOST", "localhost");
     private static final String DB_PORT = getEnv("DB_PORT", "3306");
-    private static final String DB_NAME = getEnv("DB_NAME", "mydb");
-    private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME
-            + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String USER = getEnv("DB_USER", "root");
     private static final String PASSWORD = getEnv("DB_PASSWORD", "rootroot");
+
+    /** 当前数据库名，运行时可通过 setDatabaseName() 切换 */
+    private static volatile String DB_NAME = getEnv("DB_NAME", "mydb");
 
     private static String getEnv(String key, String defaultValue) {
         String value = System.getenv(key);
@@ -31,14 +31,27 @@ public final class DBUtil {
         }
     }
 
-    /** 获取数据库连接 */
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, USER, PASSWORD);
+    private static String buildUrl() {
+        return "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME
+                + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     }
 
-    /** 获取当前数据库名（供 information_schema 查询使用） */
+    /** 获取数据库连接（使用当前数据库名） */
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(buildUrl(), USER, PASSWORD);
+    }
+
+    /** 获取当前数据库名 */
     public static String getDatabaseName() {
         return DB_NAME;
+    }
+
+    /** 切换到指定数据库 */
+    public static void setDatabaseName(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("数据库名不能为空");
+        }
+        DB_NAME = name;
     }
 
     /** 关闭 ResultSet */
