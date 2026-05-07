@@ -45,13 +45,50 @@ DatabaseProject/
 
 ## 构建与运行
 
-```bash
-# 本地开发：Spring Boot (端口 8080)，需要本地 MySQL
-mvn spring-boot:run
+### 方式一：Docker 部署（推荐）
 
-# Docker 部署：MySQL + Java
+```bash
+# 启动（首次需构建镜像，约 2-3 分钟）
+docker compose up -d --build
+
+# 启动（已有镜像，几秒）
 docker compose up -d
+
+# 查看状态
+docker compose ps
+
+# 查看日志
+docker logs db-java-api
+docker logs db-mysql
+
+# 重启
+docker compose restart
+
+# 停止（保留数据卷）
+docker compose down
+
+# 停止并删除数据卷（⚠️ 清空数据库）
+docker compose down -v
+
+# 查询数据库
+MSYS_NO_PATHCONV=1 docker exec db-mysql mysql -u root -prootroot mydb -e "SHOW TABLES; SELECT * FROM student;"
 ```
+
+### 方式二：本地开发
+
+```bash
+# 前提：本地 MySQL 运行中，mydb 库已创建
+mvn spring-boot:run
+# 访问 http://localhost:8080
+```
+
+### 端口与入口
+
+| 服务 | 端口 | 入口 |
+|------|------|------|
+| 前端管理页面 | 8080 | http://localhost:8080 |
+| REST API | 8080 | http://localhost:8080/api/students |
+| MySQL（Docker） | 3307 | `mysql -u root -prootroot -P 3307 -h 127.0.0.1 mydb` |
 
 ## 回复风格
 
