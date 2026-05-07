@@ -1,7 +1,7 @@
 <template>
   <el-container class="app-container">
     <el-aside width="220px" class="sidebar">
-      <Sidebar @create="$emit('create-table')" @create-database="$emit('create-database')" />
+      <Sidebar @create="$emit('create-table')" @create-database="$emit('create-database')" @delete-database="$emit('delete-database')" />
     </el-aside>
     <el-main class="main-area">
       <slot />

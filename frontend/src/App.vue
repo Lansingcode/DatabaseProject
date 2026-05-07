@@ -1,5 +1,5 @@
 <template>
-  <AppLayout @create-table="createTableModal.open()" @create-database="createDbModal.open()">
+  <AppLayout @create-table="createTableModal.open()" @create-database="createDbModal.open()" @delete-database="onDeleteDatabase">
     <EmptyState v-if="!store.currentTable" />
     <DataTable
       v-else
@@ -53,6 +53,18 @@ async function onDeleteRow(rowIndex) {
     })
     await store.deleteTableRow(store.currentTable, pk)
     ElMessage.success('删除成功')
+  } catch { /* 取消 */ }
+}
+
+async function onDeleteDatabase() {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除数据库「${store.currentDatabase}」吗？此操作将删除库内所有数据且不可恢复。`,
+      '删除确认', { type: 'warning', confirmButtonText: '确认删除', cancelButtonText: '取消' }
+    )
+    const name = store.currentDatabase
+    await store.deleteDatabase(name)
+    ElMessage.success('数据库已删除')
   } catch { /* 取消 */ }
 }
 

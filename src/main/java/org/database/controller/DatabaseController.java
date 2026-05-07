@@ -56,4 +56,15 @@ public class DatabaseController {
             return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
         }
     }
+
+    /** DELETE /api/databases/{name} —— 删除数据库 */
+    @DeleteMapping("/{name}")
+    public ResponseEntity<Map<String, String>> deleteDatabase(@PathVariable String name) {
+        try {
+            service.deleteDatabase(name);
+            return ResponseEntity.ok(Collections.singletonMap("database", name));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Collections.singletonMap("error", e.getMessage()));
+        }
+    }
 }

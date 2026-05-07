@@ -59,13 +59,14 @@ async function submit() {
   if (!tableName.value.trim()) { ElMessage.error('请输入表名'); return }
   const cols = columns.filter(c => c.name.trim())
   if (!cols.length) { ElMessage.error('至少定义一个列'); return }
+  const name = tableName.value.trim()
   submitting.value = true
   try {
-    await store.createTable({ tableName: tableName.value.trim(), columns: cols })
+    await store.createTable({ tableName: name, columns: cols })
     ElMessage.success('表创建成功')
     visible.value = false
     reset()
-    await store.selectTable(tableName.value.trim())
+    await store.selectTable(name)
   } catch (e) {
     ElMessage.error('创建失败: ' + e.message)
   } finally {

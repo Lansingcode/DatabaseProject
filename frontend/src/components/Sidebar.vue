@@ -9,6 +9,9 @@
         <el-button size="small" @click="$emit('create-database')" class="btn-add-db">
           <el-icon><Plus /></el-icon>
         </el-button>
+        <el-button size="small" @click="$emit('delete-database')" class="btn-del-db" :disabled="store.databases.length <= 1">
+          <el-icon><Delete /></el-icon>
+        </el-button>
       </div>
     </div>
     <h2 class="sidebar-title">数据表</h2>
@@ -38,11 +41,11 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { Grid, Plus } from '@element-plus/icons-vue'
+import { Grid, Plus, Delete } from '@element-plus/icons-vue'
 import { useTableStore } from '../stores/table'
 
 const store = useTableStore()
-defineEmits(['create', 'create-database'])
+defineEmits(['create', 'create-database', 'delete-database'])
 
 const selectedDb = ref(store.currentDatabase)
 
@@ -64,6 +67,7 @@ function onSelect(name) {
 .db-select-row { display: flex; gap: 4px; align-items: center; }
 .db-select-input { flex: 1; }
 .btn-add-db { flex-shrink: 0; }
+.btn-del-db { flex-shrink: 0; }
 .sidebar-footer { padding: 12px 16px; }
 .btn-new { width: 100%; }
 </style>

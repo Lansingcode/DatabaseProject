@@ -56,4 +56,27 @@ public class DatabaseService {
     public String getCurrentDatabase() {
         return DBUtil.getDatabaseName();
     }
+
+    /** 删除数据库。不能删除最后一个用户数据库。 */
+    public void deleteDatabase(String name) {
+        SchemaService.validateName(name);
+        List<String> databases = listDatabases();
+        if (databases.size() <= 1 && databases.contains(name)) {
+            throw new RuntimeException("不能删除唯一的数据库，至少保留一个");
+        }
+        try (Connection conn = DBUtil.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DROP DATABASE IF EXISTS `" + name + "`");
+        } catch (SQLException e) {
+            throw new RuntimeException("删除数据库失败: " + e.getMessage(), e);
+        }
+        if (name.equals(getCurrentDatabase())) {
+            String fallback = databases.stream()
+                    .filter(db -> !db.equals(name))
+                    .findFirst().orElse(null);
+            if (fallback != null) {
+                switchDatabase(fallback);
+            }
+        }
+    }
 }

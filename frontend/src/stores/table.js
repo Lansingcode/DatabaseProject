@@ -17,6 +17,14 @@ export const useTableStore = defineStore('table', () => {
     currentDatabase.value = current.database
   }
 
+  async function deleteDatabase(name) {
+    await api.deleteDatabase(name)
+    await fetchDatabases()
+    clearSelection()
+    tables.value = []
+    await fetchTables()
+  }
+
   async function createDatabase(name) {
     await api.createDatabase(name)
     await fetchDatabases()
@@ -99,7 +107,7 @@ export const useTableStore = defineStore('table', () => {
   return {
     databases, currentDatabase,
     tables, currentTable, columns, rows, loading,
-    fetchDatabases, createDatabase, switchDatabase, fetchTables,
+    fetchDatabases, createDatabase, deleteDatabase, switchDatabase, fetchTables,
     selectTable, clearSelection,
     createTable, alterTable, deleteTable,
     saveRow, deleteTableRow, getPkColumn,
