@@ -25,7 +25,7 @@ public class SchemaService {
     public List<String> listTables() {
         List<String> tables = new ArrayList<>();
         try (Connection conn = DBUtil.getConnection();
-             ResultSet rs = conn.getMetaData().getTables("mydb", null, "%", new String[]{"TABLE"})) {
+             ResultSet rs = conn.getMetaData().getTables(DBUtil.getDatabaseName(), null, "%", new String[]{"TABLE"})) {
             while (rs.next()) {
                 tables.add(rs.getString("TABLE_NAME"));
             }
@@ -43,15 +43,15 @@ public class SchemaService {
             DatabaseMetaData meta = conn.getMetaData();
             // 主键列名集合
             List<String> pkCols = new ArrayList<>();
-            try (ResultSet rs = meta.getPrimaryKeys("mydb", null, tableName)) {
+            try (ResultSet rs = meta.getPrimaryKeys(DBUtil.getDatabaseName(), null, tableName)) {
                 while (rs.next()) pkCols.add(rs.getString("COLUMN_NAME"));
             }
             // 列信息
-            try (ResultSet rs = meta.getColumns("mydb", null, tableName, "%")) {
+            try (ResultSet rs = meta.getColumns(DBUtil.getDatabaseName(), null, tableName, "%")) {
                 while (rs.next()) {
                     String colName = rs.getString("COLUMN_NAME");
                     boolean isAutoInc = false;
-                    try (ResultSet ai = meta.getColumns("mydb", null, tableName, colName)) {
+                    try (ResultSet ai = meta.getColumns(DBUtil.getDatabaseName(), null, tableName, colName)) {
                         if (ai.next()) {
                             isAutoInc = "YES".equalsIgnoreCase(ai.getString("IS_AUTOINCREMENT"));
                         }

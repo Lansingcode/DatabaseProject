@@ -15,24 +15,27 @@
 ```
 DatabaseProject/
 ├── pom.xml                                 # Maven + Spring Boot 2.7.18 + MySQL Connector
+├── Dockerfile.java                         # Docker 多阶段构建
+├── docker-compose.yml                      # Docker 编排 (MySQL + Java)
 ├── src/main/java/org/database/
 │   ├── Application.java                    # Spring Boot 入口 (端口 8080)
 │   ├── controller/
-│   │   └── StudentController.java          # REST 控制器 (@RestController)
+│   │   ├── StudentController.java          # Student REST 控制器
+│   │   ├── SchemaController.java           # 表结构管理控制器
+│   │   └── DynamicCrudController.java      # 动态 CRUD 控制器
 │   ├── service/
-│   │   └── StudentService.java             # 业务层 (@Service)
+│   │   ├── StudentService.java             # Student 业务层
+│   │   ├── SchemaService.java              # 表结构管理服务
+│   │   └── DynamicCrudService.java         # 动态 CRUD 服务
 │   ├── dao/
 │   │   └── StudentDao.java                 # JDBC 数据访问 (PreparedStatement)
 │   ├── model/
-│   │   └── Student.java                    # 实体类
+│   │   ├── Student.java                    # 学生实体
+│   │   ├── ColumnDef.java                  # 列定义
+│   │   ├── ColumnInfo.java                 # 列信息
+│   │   └── TableInfo.java                  # 表信息
 │   └── util/
-│       └── DBUtil.java                     # 数据库连接工具
-│
-├── node-rest-api/                          # Node.js Express 模块 (端口 3000)
-│   ├── server.js                           # Express 入口
-│   ├── routes/students.js                  # 路由处理器 (CRUD)
-│   ├── db/connection.js                    # mysql2 连接池
-│   └── package.json
+│       └── DBUtil.java                     # 数据库连接工具 (支持环境变量)
 │
 └── docs/                                   # 知识文档
     ├── JDBC-CRUD知识总结.md
@@ -43,11 +46,11 @@ DatabaseProject/
 ## 构建与运行
 
 ```bash
-# Java Spring Boot (端口 8080)
+# 本地开发：Spring Boot (端口 8080)，需要本地 MySQL
 mvn spring-boot:run
 
-# Node.js Express (端口 3000)
-cd node-rest-api && npm start
+# Docker 部署：MySQL + Java
+docker compose up -d
 ```
 
 ## 回复风格

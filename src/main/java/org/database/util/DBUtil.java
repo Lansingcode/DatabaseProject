@@ -9,12 +9,19 @@ import java.sql.*;
  */
 public final class DBUtil {
 
-    /** 数据库连接地址，mydb 为目标数据库名 */
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-    /** 数据库用户名 */
-    private static final String USER = "root";
-    /** 数据库密码 —— 请改为你的 root 密码 */
-    private static final String PASSWORD = "rootroot";
+    /** 从环境变量读取数据库配置，未设置时使用默认值 */
+    private static final String DB_HOST = getEnv("DB_HOST", "localhost");
+    private static final String DB_PORT = getEnv("DB_PORT", "3306");
+    private static final String DB_NAME = getEnv("DB_NAME", "mydb");
+    private static final String DB_URL = "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME
+            + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+    private static final String USER = getEnv("DB_USER", "root");
+    private static final String PASSWORD = getEnv("DB_PASSWORD", "rootroot");
+
+    private static String getEnv(String key, String defaultValue) {
+        String value = System.getenv(key);
+        return (value != null && !value.isEmpty()) ? value : defaultValue;
+    }
 
     static {
         try {
@@ -27,6 +34,11 @@ public final class DBUtil {
     /** 获取数据库连接 */
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL, USER, PASSWORD);
+    }
+
+    /** 获取当前数据库名（供 information_schema 查询使用） */
+    public static String getDatabaseName() {
+        return DB_NAME;
     }
 
     /** 关闭 ResultSet */
